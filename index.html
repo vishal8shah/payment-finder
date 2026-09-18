@@ -1,0 +1,581 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Payment Finder</title>
+<meta name="description" content="Say what is happening in your own language and see which Australian government payments apply, with the official page behind every line. Unofficial prototype built with Claude.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Schibsted+Grotesk:wght@500;600;700;800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap">
+<style>
+:root{
+  --paper:#F4F5F1; --surface:#FFFFFF; --sunk:#EEF0EA; --ink:#0F1B22; --muted:#56636B; --rule:#DFE3DC;
+  --euc:#1C7A60; --euc-ink:#135A46; --euc-soft:#E3F1EA; --mint:#7ED6B2;
+  --ochre:#A8741A; --ochre-soft:#FBF1DC; --brick:#B2472D; --brick-soft:#F8E7E0;
+  --hero:#0D1920; --hero-2:#16262F; --hero-rule:#29404C; --hero-text:#EEF2EC; --hero-muted:#9BB0B8;
+  --shadow:0 1px 2px rgba(15,27,34,.05),0 12px 40px rgba(15,27,34,.08);
+  --lift:0 24px 70px rgba(5,14,19,.35);
+  --display:"Schibsted Grotesk",ui-sans-serif,system-ui,"Segoe UI",Arial,sans-serif;
+  --serif:"Source Serif 4",Georgia,"Times New Roman",serif;
+  --mono:"IBM Plex Mono",ui-monospace,Consolas,Menlo,monospace;
+  --ease:cubic-bezier(.2,.7,.2,1);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#0A1216; --surface:#111B21; --sunk:#0E171C; --ink:#E7ECE7; --muted:#98A8AF; --rule:#223239;
+    --euc:#6CCBA6; --euc-ink:#8ADDBB; --euc-soft:#15302A; --ochre:#E0B45E; --ochre-soft:#2C2413;
+    --brick:#F08E70; --brick-soft:#35211B; --shadow:0 1px 2px rgba(0,0,0,.3),0 12px 40px rgba(0,0,0,.35);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0A1216; --surface:#111B21; --sunk:#0E171C; --ink:#E7ECE7; --muted:#98A8AF; --rule:#223239;
+  --euc:#6CCBA6; --euc-ink:#8ADDBB; --euc-soft:#15302A; --ochre:#E0B45E; --ochre-soft:#2C2413;
+  --brick:#F08E70; --brick-soft:#35211B; --shadow:0 1px 2px rgba(0,0,0,.3),0 12px 40px rgba(0,0,0,.35);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.55 var(--serif);-webkit-font-smoothing:antialiased}
+a{color:var(--euc-ink)}
+button,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--mint);outline-offset:3px;border-radius:6px}
+.wrap{width:100%;max-width:880px;margin:0 auto;padding-inline:20px}
+.mono{font-family:var(--mono)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ---------- notice ---------- */
+.notice{background:var(--hero);color:var(--hero-muted);font:13px/1.5 var(--mono);border-bottom:1px solid var(--hero-rule)}
+.notice .wrap{display:flex;gap:10px 18px;align-items:center;flex-wrap:wrap;padding-block:10px}
+.notice b{color:#F3A48B;font-weight:500;letter-spacing:.06em;text-transform:uppercase}
+
+/* ---------- hero ---------- */
+.hero{background:var(--hero);color:var(--hero-text);position:relative;overflow:hidden;padding-block:56px 150px}
+.hero::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(700px 420px at 92% 0%,rgba(126,214,178,.16),transparent 62%),
+             radial-gradient(620px 420px at 0% 110%,rgba(201,143,43,.10),transparent 60%)}
+.hero .wrap{position:relative}
+.brand{display:flex;align-items:center;gap:12px;font:600 15px var(--display);letter-spacing:.01em;color:var(--hero-text)}
+.brand i{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--mint),#2E9C7C);display:grid;place-items:center}
+.brand i::after{content:"";width:10px;height:10px;border-radius:50%;border:2.5px solid var(--hero)}
+.brand span{color:var(--hero-muted);font:400 13px var(--mono);margin-left:auto}
+h1{font:800 clamp(40px,7vw,76px)/.96 var(--display);letter-spacing:-.045em;margin:44px 0 18px;max-width:14ch;text-wrap:balance}
+h1 em{font-style:normal;color:var(--mint)}
+.lede{font-size:clamp(18px,2.2vw,21px);line-height:1.5;color:#C5D2CD;max-width:40rem;margin:0}
+.proof{display:flex;flex-wrap:wrap;gap:8px 22px;margin-top:26px;font:13px var(--mono);color:var(--hero-muted)}
+.proof span{display:flex;align-items:center;gap:8px}
+.proof span::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--mint)}
+
+/* ---------- ask card ---------- */
+.askzone{margin-top:-112px;position:relative;z-index:2}
+.ask{background:var(--surface);border-radius:20px;box-shadow:var(--lift);border:1px solid var(--rule);overflow:hidden}
+.ask-top{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--rule);flex-wrap:wrap}
+.ask-top label{font:600 13px var(--display);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.langpick{margin-left:auto;display:flex;align-items:center;gap:8px}
+.langpick select{appearance:none;-webkit-appearance:none;background:var(--sunk) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2356636B' stroke-width='1.6' fill='none'/%3E%3C/svg%3E") no-repeat right 12px center;
+  border:1px solid var(--rule);border-radius:999px;padding:8px 32px 8px 14px;font:500 14px var(--display);cursor:pointer;max-width:240px}
+.globe{width:18px;height:18px;color:var(--muted)}
+.field{position:relative;padding:18px 20px 8px}
+textarea{width:100%;min-height:118px;max-height:40vh;resize:vertical;border:0;background:transparent;outline:none;
+  font:400 clamp(19px,2.4vw,23px)/1.45 var(--serif);color:var(--ink);padding:0}
+textarea::placeholder{color:color-mix(in srgb,var(--muted) 75%,transparent);font-style:italic}
+.interim{color:var(--muted);font-style:italic}
+.ask-bar{display:flex;align-items:center;gap:12px;padding:10px 14px 14px 20px;flex-wrap:wrap}
+.hint{font:13px var(--mono);color:var(--muted);flex:1;min-width:180px}
+.mic{position:relative;width:56px;height:56px;border-radius:50%;border:0;cursor:pointer;background:var(--euc-soft);color:var(--euc-ink);
+  display:grid;place-items:center;transition:transform .15s var(--ease),background .2s}
+.mic:hover{transform:scale(1.05)}
+.mic svg{width:24px;height:24px}
+.mic.live{background:var(--brick);color:#fff}
+.mic.live::before,.mic.live::after{content:"";position:absolute;inset:0;border-radius:50%;border:2px solid var(--brick);animation:ring 1.6s var(--ease) infinite}
+.mic.live::after{animation-delay:.8s}
+@keyframes ring{from{transform:scale(1);opacity:.7}to{transform:scale(1.9);opacity:0}}
+.mic[hidden]{display:none}
+.go{border:0;border-radius:999px;background:var(--ink);color:var(--paper);font:700 16px var(--display);padding:0 26px;height:56px;cursor:pointer;
+  display:flex;align-items:center;gap:10px;transition:transform .15s var(--ease),opacity .2s}
+.go:hover{transform:translateY(-1px)}
+.go:disabled{opacity:.5;cursor:default;transform:none}
+.go svg{width:18px;height:18px}
+.wave{display:none;align-items:center;gap:3px;height:22px}
+.listening .wave{display:flex}
+.wave i{width:3px;border-radius:2px;background:var(--brick);animation:wave 1s ease-in-out infinite}
+.wave i:nth-child(2){animation-delay:.1s}.wave i:nth-child(3){animation-delay:.2s}.wave i:nth-child(4){animation-delay:.3s}.wave i:nth-child(5){animation-delay:.4s}
+@keyframes wave{0%,100%{height:5px}50%{height:22px}}
+
+.examples{display:flex;gap:10px;margin:18px 0 0;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin}
+.ex{flex:none;max-width:300px;text-align:start;border:1px solid var(--rule);background:var(--surface);border-radius:14px;padding:12px 14px;cursor:pointer;
+  font:400 15px/1.4 var(--serif);color:var(--ink);transition:border-color .2s,transform .15s var(--ease)}
+.ex:hover{border-color:var(--euc);transform:translateY(-1px)}
+.ex small{display:block;font:500 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--euc-ink);margin-bottom:5px}
+
+/* ---------- progress ---------- */
+#out{margin-top:34px;min-height:40px}
+.steps{display:grid;gap:0;background:var(--surface);border:1px solid var(--rule);border-radius:18px;box-shadow:var(--shadow);overflow:hidden}
+.step{display:grid;grid-template-columns:34px 1fr auto;gap:14px;padding:18px 20px;border-top:1px solid var(--rule);align-items:start}
+.step:first-child{border-top:0}
+.dot{width:26px;height:26px;border-radius:50%;border:2px solid var(--rule);display:grid;place-items:center;margin-top:1px}
+.step.run .dot{border-color:var(--euc);border-top-color:transparent;animation:spin .8s linear infinite}
+.step.ok .dot{background:var(--euc);border-color:var(--euc)}
+.step.ok .dot::after{content:"";width:9px;height:5px;border:2px solid #fff;border-top:0;border-right:0;transform:rotate(-45deg) translate(1px,-1px)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.step h3{margin:0;font:600 17px var(--display)}
+.step .t{font:13px var(--mono);color:var(--muted);white-space:nowrap}
+.step .body{grid-column:2/4;display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.step .body:empty{display:none}
+.chip{font:13px/1.3 var(--mono);border-radius:8px;padding:6px 10px;background:var(--sunk);border:1px solid var(--rule);color:var(--muted)}
+.chip.en{background:var(--euc-soft);border-color:transparent;color:var(--euc-ink)}
+.found{display:flex;align-items:center;gap:10px;font:14px var(--display);padding:8px 12px;border-radius:10px;border:1px solid var(--rule);background:var(--paper);
+  animation:rise .4s var(--ease) both}
+.found b{font-weight:600}
+.found time{font:12px var(--mono);color:var(--ochre)}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ---------- answer ---------- */
+.answer{display:grid;gap:18px;animation:rise .45s var(--ease) both}
+.sum{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.sum h2{margin:0;font:800 clamp(26px,3.6vw,34px)/1.1 var(--display);letter-spacing:-.03em;flex:1;min-width:240px}
+.tool{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--rule);background:var(--surface);border-radius:999px;padding:8px 14px;cursor:pointer;font:500 14px var(--display)}
+.tool svg{width:16px;height:16px}
+.tool.on{background:var(--euc);color:#fff;border-color:var(--euc)}
+.readas{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font:13px var(--mono);color:var(--muted)}
+
+.pay{background:var(--surface);border:1px solid var(--rule);border-radius:18px;box-shadow:var(--shadow);padding:22px 24px;position:relative;overflow:hidden}
+.pay::before{content:"";position:absolute;inset-block:0;inset-inline-start:0;width:4px;background:var(--euc)}
+.pay .kicker{font:500 12px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--euc-ink)}
+.pay h3{margin:6px 0 6px;font:800 clamp(22px,3vw,28px)/1.1 var(--display);letter-spacing:-.025em}
+.pay .who{margin:0;font-size:18px;line-height:1.5}
+.pay .diff{margin:12px 0 0;padding:12px 14px;background:var(--ochre-soft);border-radius:10px;font-size:15.5px;line-height:1.45}
+.pay .diff b{font:600 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ochre);display:block;margin-bottom:3px}
+.rules{margin:16px 0 0;padding:0;list-style:none;display:grid;gap:9px}
+.rules li{position:relative;padding-inline-start:22px;font-size:16.5px;line-height:1.5}
+.rules li::before{content:"";position:absolute;inset-inline-start:0;top:.62em;width:9px;height:9px;border-radius:2px;border:2px solid var(--euc)}
+.rules-h{margin:18px 0 0;font:600 12px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+
+.cite{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:20px;padding:0 6px;margin-inline-start:6px;border-radius:6px;
+  font:500 12px var(--mono);text-decoration:none;background:var(--euc-soft);color:var(--euc-ink);vertical-align:2px;transition:background .15s}
+.cite:hover{background:var(--euc);color:#fff}
+
+.panel{background:var(--surface);border:1px solid var(--rule);border-radius:18px;padding:22px 24px}
+.panel h3{margin:0 0 12px;font:700 19px var(--display);letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
+.panel h3 .n{font:500 12px var(--mono);color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.next{margin:0;padding:0;list-style:none;counter-reset:n;display:grid;gap:12px}
+.next li{counter-increment:n;display:grid;grid-template-columns:34px 1fr;gap:12px;font-size:16.5px;line-height:1.5}
+.next li::before{content:counter(n);width:30px;height:30px;border-radius:50%;background:var(--ink);color:var(--paper);display:grid;place-items:center;font:700 14px var(--display)}
+.next a.go-link{display:inline-flex;align-items:center;gap:6px;font:600 14px var(--display);margin-top:4px;text-decoration:none}
+.next a.go-link::after{content:"↗"}
+.cant{background:var(--brick-soft);border-color:transparent}
+.cant h3{color:var(--brick)}
+.cant ul{margin:0;padding-inline-start:20px;display:grid;gap:6px;font-size:16px}
+.srcs{margin:0;padding:0;list-style:none;display:grid;gap:10px}
+.srcs li{display:grid;grid-template-columns:30px 1fr auto;gap:12px;align-items:baseline;font:15px var(--display)}
+.srcs .i{font:500 12px var(--mono);color:var(--euc-ink);background:var(--euc-soft);border-radius:6px;text-align:center;padding:3px 0}
+.srcs time{font:12px var(--mono);color:var(--ochre);white-space:nowrap}
+.srcs .stale{color:var(--brick)}
+details.how{border:1px dashed var(--rule);border-radius:14px;padding:14px 18px;font-size:15px}
+details.how summary{cursor:pointer;font:600 14px var(--display);color:var(--muted)}
+details.how .body{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+
+.refusal{background:var(--surface);border:1px solid var(--rule);border-radius:18px;box-shadow:var(--shadow);padding:26px;display:grid;gap:12px;position:relative;overflow:hidden;animation:rise .45s var(--ease) both}
+.refusal::before{content:"";position:absolute;inset-block:0;inset-inline-start:0;width:4px;background:var(--brick)}
+.refusal .kicker{font:500 12px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--brick)}
+.refusal h2{margin:0;font:800 clamp(22px,3vw,28px)/1.15 var(--display);letter-spacing:-.02em}
+.refusal p{margin:0;font-size:17.5px}
+.refusal .acts{display:flex;flex-wrap:wrap;gap:10px;margin-top:4px}
+.btn{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:10px 16px;font:600 15px var(--display);text-decoration:none;border:1px solid var(--rule);background:var(--paper);color:var(--ink)}
+.btn.primary{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+
+/* ---------- trust strip + footer ---------- */
+.trust{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:56px 0 0}
+.trust div{border-top:2px solid var(--ink);padding-top:14px}
+.trust b{display:block;font:700 17px var(--display);margin-bottom:4px}
+.trust p{margin:0;font-size:15px;color:var(--muted);line-height:1.5}
+footer{margin:48px 0 56px;padding-top:22px;border-top:1px solid var(--rule);font-size:14px;color:var(--muted);display:grid;gap:8px}
+footer .meta{font:12px var(--mono)}
+
+[dir="rtl"] .rules li::before{inset-inline-start:0}
+[dir="rtl"] .next a.go-link::after{content:"↖"}
+
+@media (max-width:640px){
+  .hero{padding-block:36px 130px}
+  h1{margin-top:30px}
+  .ask-top{padding:12px 14px}
+  .langpick{margin-left:0;width:100%}
+  .langpick select{max-width:none;flex:1}
+  .field{padding:14px 16px 6px}
+  .ask-bar{padding:8px 12px 12px 16px}
+  .go{flex:1;justify-content:center}
+  .hint{order:3;flex-basis:100%}
+  .trust{grid-template-columns:1fr}
+  .srcs li{grid-template-columns:30px 1fr}
+  .srcs time{grid-column:2}
+  .step{grid-template-columns:30px 1fr}
+  .step .t{grid-column:2}
+  .pay,.panel{padding:18px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+
+<div class="notice" role="note">
+  <div class="wrap">
+    <b>Unofficial prototype · recorded demo</b>
+    <span>Not affiliated with Services Australia. It cannot see your record, claim, balance, wait times or payment amounts, and it stores nothing you type or say. The example answers were generated live by the pipeline on 18 September 2026 and are replayed here, faster than live. <a href="deck.html" style="color:#9fe0c4">Deck</a> · <a href="https://github.com/vishal8shah/Services-Australia-demo" style="color:#9fe0c4">Code</a></span>
+  </div>
+</div>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="brand"><i aria-hidden="true"></i>Payment Finder <span id="corpus">official public pages</span></div>
+    <h1>Say what's happening. <em>See what applies.</em></h1>
+    <p class="lede">Describe your situation in your own words, typed or spoken, in your own language. Get the payments that fit, what the rules say, and what to do next, with the official page behind every line.</p>
+    <div class="proof" aria-label="How it works">
+      <span>Every claim cited and dated</span><span>Answers in 24 languages</span><span>Refuses rather than guesses</span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="askzone" aria-label="Ask a question">
+    <form class="ask" id="ask">
+      <div class="ask-top">
+        <label for="q">Your situation</label>
+        <div class="langpick">
+          <svg class="globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.8 3 2.8 15 0 18M12 3c-2.8 3-2.8 15 0 18"/></svg>
+          <label class="sr" for="lang">Language</label>
+          <select id="lang"></select>
+        </div>
+      </div>
+      <div class="field">
+        <textarea id="q" name="q" required maxlength="500" rows="3"
+          placeholder="Mum is 82 and moving in with us, and I've dropped to three days a week."></textarea>
+      </div>
+      <div class="ask-bar">
+        <button type="button" class="mic" id="mic" aria-label="Speak your situation" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+        </button>
+        <div class="wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+        <p class="hint" id="hint" aria-live="polite">Type, or tap the microphone and speak.</p>
+        <button type="submit" class="go" id="go">Find what applies
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+      </div>
+    </form>
+
+    <div class="examples" aria-label="Try an example">
+      <button type="button" class="ex" data-lang="en-AU"><small>Caring · English</small>Mum is 82 and moving in with us, I have dropped to three days a week.</button>
+      <button type="button" class="ex" data-lang="en-AU"><small>Work and family · English</small>I lost my job last month, I have two kids in childcare and I rent.</button>
+      <button type="button" class="ex" data-lang="vi-VN"><small>Caring · Tiếng Việt</small>Mẹ tôi 82 tuổi và sắp dọn về ở với chúng tôi, tôi đã giảm xuống làm ba ngày một tuần.</button>
+      <button type="button" class="ex" data-lang="ar-SA"><small>New baby · العربية</small>سننجب طفلاً في شهر مارس وأنا أعمل لحسابي الخاص.</button>
+      <button type="button" class="ex" data-lang="zh-CN"><small>Disaster · 中文</small>上周洪水损坏了我们的房子。</button>
+      <button type="button" class="ex" data-lang="pa-Guru-IN"><small>Lost my job · ਪੰਜਾਬੀ</small>ਪਿਛਲੇ ਹਫ਼ਤੇ ਮੇਰੀ ਨੌਕਰੀ ਚਲੀ ਗਈ, ਮੈਂ ਕੈਜ਼ੂਅਲ ਸੀ ਇਸ ਲਈ ਕੋਈ ਰਿਡੰਡੈਂਸੀ ਨਹੀਂ ਮਿਲੀ।</button>
+      <button type="button" class="ex" data-lang="en-AU"><small>Refuses · amounts</small>How much will I get for Carer Payment?</button>
+      <button type="button" class="ex" data-lang="en-AU"><small>Refuses · identifiers</small>My CRN is 123 456 789A, what can I claim?</button>
+    </div>
+  </section>
+
+  <div id="out" aria-live="polite"></div>
+
+  <section class="trust" aria-label="What this tool does and does not do">
+    <div><b>Sourced, line by line</b><p>Six checks run in code after the model writes. An answer with an unsourced line, or a payment the pages never mention, is refused.</p></div>
+    <div><b>Nothing about you</b><p>No login and no record access. Identifiers like a CRN or TFN are blocked before anything is searched. Questions are never logged.</p></div>
+    <div><b>Ends on the official page</b><p>Every answer links to the Services Australia page it came from, with that page's own last-updated date.</p></div>
+  </section>
+
+  <footer>
+    <p>Answers are drawn from public pages published by Services Australia, © Commonwealth of Australia, reused under <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>. This tool is not endorsed by them. For anything about your own record, use myGov or call 132 850.</p>
+    <p>Voice input uses your browser's speech service. In Chrome and Edge the audio is sent to that provider to be transcribed; this tool never receives or keeps it.</p>
+    <p class="meta" id="build"></p>
+  </footer>
+</main>
+
+<script>
+(function(){
+  var REC = {"Mum is 82 and moving in with us, I have dropped to three days a week.": {"lang": "en-AU", "plan": {"language": "en", "rtl": false, "refusal": null, "query_facets": ["Mum is 82, moving in with us", "I have dropped to three days a week"], "query_expansions": ["Age Pension eligibility", "Carer Payment principal carer", "Carer Allowance", "income test"], "pages": [{"title": "Carer Allowance", "url": "https://www.servicesaustralia.gov.au/carer-allowance", "page_last_updated": "2025-12-02"}, {"title": "Who can get Carer Allowance", "url": "https://www.servicesaustralia.gov.au/who-can-get-carer-allowance", "page_last_updated": "2026-06-16"}, {"title": "How to keep your Carer Payment", "url": "https://www.servicesaustralia.gov.au/how-to-keep-your-carer-payment", "page_last_updated": "2025-12-12"}, {"title": "Who should apply for an aged care calculation of your cost of care", "url": "https://www.servicesaustralia.gov.au/who-should-apply-for-aged-care-calculation-your-cost-care", "page_last_updated": "2025-11-01"}, {"title": "Carer Supplement", "url": "https://www.servicesaustralia.gov.au/carer-supplement", "page_last_updated": "2026-07-02"}, {"title": "Carer Payment", "url": "https://www.servicesaustralia.gov.au/carer-payment", "page_last_updated": "2026-05-04"}], "confidence": 1.0}, "answer": {"language": "en", "query_facets": ["Mum is 82, moving in with us", "I have dropped to three days a week"], "query_expansions": ["Age Pension", "Carer Payment", "Carer Allowance", "Rent Assistance"], "refusal": null, "payments": [{"name": "Carer Payment", "one_liner": "A payment for people who give constant care to someone with disability, a medical condition, or who is frail aged.", "distinguisher": "This is an income support payment, unlike Carer Allowance which is a supplementary payment.", "eligibility_signals": [{"text": "It's for people who give constant care to someone with disability, a medical condition, or an adult who's frail aged.", "source_ids": ["c_527fd534"]}], "source_ids": ["c_527fd534"]}, {"name": "Carer Allowance", "one_liner": "An extra fortnightly payment for people who support and care for someone with disability, a medical condition, or who is frail aged.", "distinguisher": "This is a supplementary payment on top of other income, unlike Carer Payment which replaces income.", "eligibility_signals": [{"text": "It's for people who give support and care to someone with disability, a medical condition, or who's frail aged.", "source_ids": ["c_f8b9063b"]}, {"text": "The person cared for needs ongoing daily care for at least 12 months, or has a terminal medical condition.", "source_ids": ["c_f8b9063b"]}, {"text": "Both the carer and the person cared for need to meet certain rules.", "source_ids": ["c_be678461"]}, {"text": "You may be able to get both Carer Allowance and Carer Payment, and can submit a combined claim.", "source_ids": ["c_f8b9063b"]}], "source_ids": ["c_ddfcf369", "c_be678461", "c_f8b9063b"]}, {"name": "Age Pension", "one_liner": "The main income support payment for people who are Age Pension age (67 or older).", "distinguisher": "This is for your mum herself, based on her age, not related to caring arrangements.", "eligibility_signals": [{"text": "It's the main income support payment for people who are Age Pension age, which is 67 years or older.", "source_ids": ["c_a8036ea3"]}], "source_ids": ["c_a8036ea3"]}, {"name": "Rent Assistance", "one_liner": "An extra regular payment for people who pay rent or accommodation costs and get an eligible payment from Centrelink.", "distinguisher": "This only applies if you or your mum already get an eligible payment and pay rent above a minimum amount.", "eligibility_signals": [{"text": "You need to get an eligible payment, live in eligible accommodation, and pay more than the minimum rent amount.", "source_ids": ["c_a837fc5a"]}, {"text": "If eligible, it's paid automatically with your regular payment - you don't need to apply.", "source_ids": ["c_a837fc5a"]}], "source_ids": ["c_713d98f6", "c_a837fc5a"]}], "next_actions": [{"order": 1, "text": "Check the rules for Carer Payment to see if your caring situation and your mum's needs meet them.", "url": "https://www.servicesaustralia.gov.au/carer-payment", "source_ids": ["c_527fd534"]}, {"order": 2, "text": "Check the rules for Carer Allowance for both you and your mum.", "url": "https://www.servicesaustralia.gov.au/who-can-get-carer-allowance", "source_ids": ["c_be678461"]}, {"order": 3, "text": "Check if your mum meets the Age Pension age and other rules.", "url": "https://www.servicesaustralia.gov.au/age-pension", "source_ids": ["c_a8036ea3"]}, {"order": 4, "text": "If you or your mum get an eligible payment, check whether your rent or accommodation costs qualify for Rent Assistance.", "url": "https://www.servicesaustralia.gov.au/who-can-get-rent-assistance", "source_ids": ["c_a837fc5a"]}], "sources": [{"id": "c_527fd534", "title": "Carer Payment", "heading_path": "Carer Payment", "url": "https://www.servicesaustralia.gov.au/carer-payment", "page_last_updated": "2026-05-04", "stale": false}, {"id": "c_713d98f6", "title": "Rent Assistance", "heading_path": "Rent Assistance", "url": "https://www.servicesaustralia.gov.au/rent-assistance", "page_last_updated": "2026-07-14", "stale": false}, {"id": "c_a8036ea3", "title": "Age Pension", "heading_path": "Age Pension", "url": "https://www.servicesaustralia.gov.au/age-pension", "page_last_updated": "2025-11-21", "stale": false}, {"id": "c_a837fc5a", "title": "Who can get Rent Assistance", "heading_path": "Who can get it", "url": "https://www.servicesaustralia.gov.au/who-can-get-rent-assistance", "page_last_updated": "2026-08-20", "stale": false}, {"id": "c_be678461", "title": "Who can get Carer Allowance", "heading_path": "Who can get it", "url": "https://www.servicesaustralia.gov.au/who-can-get-carer-allowance", "page_last_updated": "2026-06-16", "stale": false}, {"id": "c_ddfcf369", "title": "Carer Allowance", "heading_path": "Carer Allowance", "url": "https://www.servicesaustralia.gov.au/carer-allowance", "page_last_updated": "2025-12-02", "stale": false}, {"id": "c_f8b9063b", "title": "Carer Allowance", "heading_path": "Carer Allowance > We have information in different languages about Carer Allowance > Information for carers", "url": "https://www.servicesaustralia.gov.au/carer-allowance", "page_last_updated": "2025-12-02", "stale": false}], "not_answered": ["How much any of these payments are worth, or how long they take to process, isn't something these pages cover here.", "Whether dropping to three days a week of work specifically affects payment amounts isn't covered here."], "confidence": 0.5, "meta": {"elapsed_ms": 16694.2, "recorded": true}, "stale_sources": []}}, "I lost my job last month, I have two kids in childcare and I rent.": {"lang": "en-AU", "plan": {"language": "en", "rtl": false, "refusal": null, "query_facets": ["I lost my job last month", "I have two kids in childcare, I rent"], "query_expansions": ["JobSeeker Payment", "Child Care Subsidy", "Rent Assistance", "Family Tax Benefit"], "pages": [{"title": "Rent Assistance", "url": "https://www.servicesaustralia.gov.au/rent-assistance", "page_last_updated": "2026-07-14"}, {"title": "Who can get Rent Assistance", "url": "https://www.servicesaustralia.gov.au/who-can-get-rent-assistance", "page_last_updated": "2026-08-20"}, {"title": "JobSeeker Payment", "url": "https://www.servicesaustralia.gov.au/jobseeker-payment", "page_last_updated": "2026-04-29"}, {"title": "Acting arrangements for Centrelink or aged care", "url": "https://www.servicesaustralia.gov.au/acting-arrangements-for-centrelink-or-aged-care", "page_last_updated": "2026-09-14"}, {"title": "Child Care Subsidy", "url": "https://www.servicesaustralia.gov.au/child-care-subsidy", "page_last_updated": "2026-01-05"}, {"title": "Who can get Parenting Payment", "url": "https://www.servicesaustralia.gov.au/who-can-get-parenting-payment", "page_last_updated": "2026-05-04"}], "confidence": 0.75}, "answer": {"language": "en", "query_facets": ["I lost my job last month", "I have two kids in childcare, I rent"], "query_expansions": ["JobSeeker Payment", "Child Care Subsidy", "Rent Assistance", "Family Tax Benefit"], "refusal": null, "payments": [{"name": "JobSeeker Payment", "one_liner": "Financial help for people looking for work, including if you've lost your job.", "distinguisher": null, "eligibility_signals": [{"text": "For people between 22 and Age Pension age who are looking for work", "source_ids": ["c_acbcd765"]}], "source_ids": ["c_acbcd765"]}, {"name": "Child Care Subsidy", "one_liner": "Help with the cost of child care for your kids.", "distinguisher": null, "eligibility_signals": [{"text": "Assistance to help with the cost of child care", "source_ids": ["c_cbba5be1"]}], "source_ids": ["c_cbba5be1"]}, {"name": "Rent Assistance", "one_liner": "Extra payment for people who pay rent and get an eligible payment from Centrelink.", "distinguisher": null, "eligibility_signals": [{"text": "You must get an eligible payment, live in an eligible accommodation type, and pay more than the minimum amount of rent", "source_ids": ["c_a837fc5a"]}, {"text": "Rent is one of the eligible accommodation cost types", "source_ids": ["c_a4410871"]}, {"text": "It's paid automatically with your regular payment if you're eligible, so you don't need to apply separately", "source_ids": ["c_a837fc5a", "c_98108a05"]}], "source_ids": ["c_713d98f6", "c_a4410871", "c_a837fc5a", "c_98108a05"]}], "next_actions": [{"order": 1, "text": "Look into claiming JobSeeker Payment now that you've lost your job.", "url": "https://www.servicesaustralia.gov.au/jobseeker-payment", "source_ids": ["c_acbcd765"]}, {"order": 2, "text": "Check if you can get Child Care Subsidy to help with child care costs for your kids.", "url": "https://www.servicesaustralia.gov.au/child-care-subsidy", "source_ids": ["c_cbba5be1"]}, {"order": 3, "text": "Check if you meet the rules for Rent Assistance, which is usually paid automatically once you're on an eligible payment.", "url": "https://www.servicesaustralia.gov.au/who-can-get-rent-assistance", "source_ids": ["c_a837fc5a"]}], "sources": [{"id": "c_713d98f6", "title": "Rent Assistance", "heading_path": "Rent Assistance", "url": "https://www.servicesaustralia.gov.au/rent-assistance", "page_last_updated": "2026-07-14", "stale": false}, {"id": "c_98108a05", "title": "Rent Assistance", "heading_path": "Rent Assistance > We have information in different languages about Rent Assistance", "url": "https://www.servicesaustralia.gov.au/rent-assistance", "page_last_updated": "2026-07-14", "stale": false}, {"id": "c_a4410871", "title": "Who can get Rent Assistance", "heading_path": "Who can get it > Eligible accommodation cost types", "url": "https://www.servicesaustralia.gov.au/who-can-get-rent-assistance", "page_last_updated": "2026-08-20", "stale": false}, {"id": "c_a837fc5a", "title": "Who can get Rent Assistance", "heading_path": "Who can get it", "url": "https://www.servicesaustralia.gov.au/who-can-get-rent-assistance", "page_last_updated": "2026-08-20", "stale": false}, {"id": "c_acbcd765", "title": "JobSeeker Payment", "heading_path": "JobSeeker Payment", "url": "https://www.servicesaustralia.gov.au/jobseeker-payment", "page_last_updated": "2026-04-29", "stale": false}, {"id": "c_cbba5be1", "title": "Child Care Subsidy", "heading_path": "Child Care Subsidy", "url": "https://www.servicesaustralia.gov.au/child-care-subsidy", "page_last_updated": "2026-01-05", "stale": false}], "not_answered": ["These pages don't give payment amounts, wait times or processing times."], "confidence": 0.75, "meta": {"elapsed_ms": 14874.2, "recorded": true}, "stale_sources": []}}, "Mẹ tôi 82 tuổi và sắp dọn về ở với chúng tôi, tôi đã giảm xuống làm ba ngày một tuần.": {"lang": "vi-VN", "plan": {"language": "vi", "rtl": false, "refusal": null, "query_facets": ["Mẹ tôi 82 tuổi và sắp dọn về ở với chúng tôi", "tôi đã giảm xuống làm ba ngày một tuần"], "query_expansions": ["Age Pension residence rules", "Carer Payment eligibility", "Carer Allowance income test", "Work Bonus part-time work"], "pages": [{"title": "Who can get Carer Allowance", "url": "https://www.servicesaustralia.gov.au/who-can-get-carer-allowance", "page_last_updated": "2026-06-16"}, {"title": "Who can get the Work Bonus", "url": "https://www.servicesaustralia.gov.au/who-can-get-work-bonus", "page_last_updated": "2025-02-14"}, {"title": "How much Age Pension you can get", "url": "https://www.servicesaustralia.gov.au/how-much-age-pension-you-can-get", "page_last_updated": "2026-06-19"}, {"title": "How to claim a Commonwealth Seniors Health Card", "url": "https://www.servicesaustralia.gov.au/how-to-claim-commonwealth-seniors-health-card", "page_last_updated": "2024-07-03"}, {"title": "How to claim Austudy", "url": "https://www.servicesaustralia.gov.au/how-to-claim-austudy", "page_last_updated": "2025-10-29"}, {"title": "How to claim Parenting Payment", "url": "https://www.servicesaustralia.gov.au/how-to-claim-parenting-payment", "page_last_updated": "2025-10-29"}], "confidence": 0.5}, "answer": {"language": "vi", "query_facets": ["Mẹ tôi 82 tuổi và sắp dọn về ở với chúng tôi", "tôi đã giảm xuống làm ba ngày một tuần"], "query_expansions": ["Age Pension", "principal carer", "income test", "Carer Payment", "Carer Allowance"], "refusal": null, "payments": [{"name": "Age Pension", "one_liner": "Age Pension (Lương hưu tuổi già) dành cho người từ 67 tuổi trở lên, đáp ứng điều kiện thu nhập, tài sản và cư trú - có thể áp dụng cho mẹ bạn vì bà đã 82 tuổi.", "distinguisher": null, "eligibility_signals": [{"text": "Phải từ 67 tuổi trở lên", "source_ids": ["c_9d64ab72"]}, {"text": "Phải nằm trong giới hạn của bài kiểm tra thu nhập và tài sản", "source_ids": ["c_9d64ab72"]}, {"text": "Phải là người thường trú tại Úc, thông thường ít nhất 10 năm", "source_ids": ["c_9d64ab72"]}], "source_ids": ["c_9d64ab72"]}, {"name": "Carer Payment", "one_liner": "Carer Payment (Trợ cấp người chăm sóc) dành cho người chăm sóc liên tục cho ai đó bị khuyết tật, bệnh lý, hoặc người lớn tuổi yếu ớt - có thể áp dụng nếu bạn đang chăm sóc mẹ và đã giảm giờ làm.", "distinguisher": "Đây là khoản trợ cấp chính cho người chăm sóc toàn thời gian, khác với Carer Allowance là khoản trợ cấp bổ sung.", "eligibility_signals": [{"text": "Cả bạn và người bạn chăm sóc đều cần đáp ứng điều kiện", "source_ids": ["c_9355edf7"]}, {"text": "Dành cho người chăm sóc liên tục cho người khuyết tật, có bệnh lý, hoặc người lớn tuổi yếu ớt", "source_ids": ["c_527fd534"]}], "source_ids": ["c_527fd534", "c_9355edf7"]}, {"name": "Carer Allowance", "one_liner": "Carer Allowance (Trợ cấp bổ sung cho người chăm sóc) dành cho người chăm sóc ai đó cần hỗ trợ hàng ngày - có thể áp dụng nếu bạn đang chăm sóc mẹ mình.", "distinguisher": "Đây là khoản trợ cấp bổ sung, không phải khoản thu nhập chính, và có thể nhận cùng với các khoản trợ cấp khác.", "eligibility_signals": [{"text": "Dành cho người chăm sóc ai đó cần hỗ trợ hàng ngày", "source_ids": ["c_ddfcf369"]}, {"text": "Cả bạn và người bạn chăm sóc đều cần đáp ứng một số điều kiện", "source_ids": ["c_be678461"]}], "source_ids": ["c_ddfcf369", "c_be678461"]}, {"name": "Carer Supplement", "one_liner": "Carer Supplement (Trợ cấp thường niên cho người chăm sóc) dành cho người có trách nhiệm chăm sóc và đang nhận một số khoản trợ cấp người chăm sóc hoặc trợ cấp của Bộ Cựu chiến binh.", "distinguisher": "Đây là khoản trợ cấp trả một lần mỗi năm, không phải trợ cấp định kỳ.", "eligibility_signals": [{"text": "Dành cho người có trách nhiệm chăm sóc và đang nhận một số khoản trợ cấp người chăm sóc hoặc của Bộ Cựu chiến binh", "source_ids": ["c_6690ed0f"]}], "source_ids": ["c_6690ed0f"]}], "next_actions": [{"order": 1, "text": "Kiểm tra chi tiết điều kiện đầy đủ cho Age Pension để xem mẹ bạn có đủ điều kiện không.", "url": "https://www.servicesaustralia.gov.au/age-pension", "source_ids": ["c_9d64ab72"]}, {"order": 2, "text": "Kiểm tra điều kiện chi tiết cho Carer Payment để xem việc bạn giảm giờ làm để chăm sóc mẹ có đủ điều kiện không.", "url": "https://www.servicesaustralia.gov.au/who-can-get-carer-payment", "source_ids": ["c_9355edf7"]}, {"order": 3, "text": "Kiểm tra điều kiện chi tiết cho Carer Allowance.", "url": "https://www.servicesaustralia.gov.au/who-can-get-carer-allowance", "source_ids": ["c_be678461"]}], "sources": [{"id": "c_527fd534", "title": "Carer Payment", "heading_path": "Carer Payment", "url": "https://www.servicesaustralia.gov.au/carer-payment", "page_last_updated": "2026-05-04", "stale": false}, {"id": "c_6690ed0f", "title": "Carer Supplement", "heading_path": "Carer Supplement", "url": "https://www.servicesaustralia.gov.au/carer-supplement", "page_last_updated": "2026-07-02", "stale": false}, {"id": "c_9355edf7", "title": "Who can get Carer Payment", "heading_path": "Who can get it", "url": "https://www.servicesaustralia.gov.au/who-can-get-carer-payment", "page_last_updated": "2026-06-18", "stale": false}, {"id": "c_9d64ab72", "title": "Age Pension", "heading_path": "Age Pension > We have information in different languages about Age Pension", "url": "https://www.servicesaustralia.gov.au/age-pension", "page_last_updated": "2025-11-21", "stale": false}, {"id": "c_be678461", "title": "Who can get Carer Allowance", "heading_path": "Who can get it", "url": "https://www.servicesaustralia.gov.au/who-can-get-carer-allowance", "page_last_updated": "2026-06-16", "stale": false}, {"id": "c_ddfcf369", "title": "Carer Allowance", "heading_path": "Carer Allowance", "url": "https://www.servicesaustralia.gov.au/carer-allowance", "page_last_updated": "2025-12-02", "stale": false}], "not_answered": ["Không có thông tin về số tiền cụ thể, mức trợ cấp, hoặc thời gian xử lý cho bất kỳ khoản trợ cấp nào.", "Không rõ liệu việc giảm xuống làm ba ngày một tuần có tự động đủ điều kiện nhận Carer Payment hay Carer Allowance hay không, vì cần kiểm tra đầy đủ các điều kiện chi tiết."], "confidence": 0.5, "meta": {"elapsed_ms": 25201.1, "recorded": true}, "stale_sources": []}}, "سننجب طفلاً في شهر مارس وأنا أعمل لحسابي الخاص.": {"lang": "ar-SA", "plan": {"language": "ar", "rtl": true, "refusal": null, "query_facets": [], "query_expansions": ["Parental Leave Pay self-employed", "Newborn Upfront Payment", "Child Care Subsidy", "Family Tax Benefit"], "pages": [{"title": "Child Care Subsidy", "url": "https://www.servicesaustralia.gov.au/child-care-subsidy", "page_last_updated": "2026-01-05"}, {"title": "Parental Leave Pay", "url": "https://www.servicesaustralia.gov.au/parental-leave-pay", "page_last_updated": "2026-09-10"}, {"title": "Who can get Parental Leave Pay", "url": "https://www.servicesaustralia.gov.au/who-can-get-parental-leave-pay", "page_last_updated": "2026-04-01"}, {"title": "Family Tax Benefit", "url": "https://www.servicesaustralia.gov.au/family-tax-benefit", "page_last_updated": "2026-06-15"}, {"title": "Who can get Child Care Subsidy", "url": "https://www.servicesaustralia.gov.au/who-can-get-child-care-subsidy", "page_last_updated": "2026-01-05"}], "confidence": 0.5}, "answer": {"language": "ar", "query_facets": [], "query_expansions": ["Parental Leave Pay", "Newborn Upfront Payment", "self-employed income test", "Child Care Subsidy"], "refusal": null, "payments": [{"name": "Parental Leave Pay", "one_liner": "Parental Leave Pay (إجازة أبوية مدفوعة) - دفعة لمن يعتني بطفل حديث الولادة أو متبنى حديثاً، ويمكن للعاملين لحسابهم الخاص الحصول عليها إذا استوفوا الشروط", "distinguisher": null, "eligibility_signals": [{"text": "يجب أن تكون تعتني بطفل حديث الولادة أو متبنى حديثاً وقد قدّمت طلباً", "source_ids": ["c_75307ddf"]}, {"text": "يمكن الحصول عليها إذا كنت تعمل لحسابك الخاص أو صاحب عمل فردي، مع استيفاء اختبار العمل وجميع الشروط الأخرى", "source_ids": ["c_75307ddf"]}, {"text": "يجب استيفاء اختبار الدخل واختبار العمل وقواعد الإقامة", "source_ids": ["c_0a977223", "c_75307ddf", "c_d9b1fcc9"]}, {"text": "إذا كان المولود جديداً يجب تسجيل ولادته أو التقدم لتسجيلها لدى سجل الولادات في ولايتك أو إقليمك", "source_ids": ["c_d9b1fcc9", "c_75307ddf"]}, {"text": "لا يمكنك العمل في الأيام التي تحصل فيها على هذه الدفعة إلا لأسباب مسموح بها", "source_ids": ["c_d9b1fcc9"]}, {"text": "يجب تقديم المطالبة ضمن المهل الزمنية المحددة للمطالبة", "source_ids": ["c_d9b1fcc9"]}], "source_ids": ["c_75307ddf", "c_0a977223", "c_d9b1fcc9"]}, {"name": "Child Care Subsidy", "one_liner": "Child Care Subsidy (إعانة رعاية الطفل) - مساعدة لتغطية تكاليف رعاية الطفل عند الحاجة إليها", "distinguisher": null, "eligibility_signals": [{"text": "تساعد في تغطية تكاليف رعاية الطفل", "source_ids": ["c_cbba5be1"]}], "source_ids": ["c_cbba5be1"]}], "next_actions": [{"order": 1, "text": "تحقق من شروط الحصول على Parental Leave Pay قبل تقديم المطالبة، خاصة شروط اختبار العمل والدخل بما أنك تعمل لحسابك الخاص", "url": "https://www.servicesaustralia.gov.au/who-can-get-parental-leave-pay", "source_ids": ["c_75307ddf"]}, {"order": 2, "text": "سجّل أو تقدم بطلب تسجيل ولادة طفلك لدى سجل الولادات في ولايتك أو إقليمك بعد الولادة", "url": "https://www.servicesaustralia.gov.au/parental-leave-pay", "source_ids": ["c_d9b1fcc9"]}], "sources": [{"id": "c_0a977223", "title": "Parental Leave Pay", "heading_path": "Parental Leave Pay", "url": "https://www.servicesaustralia.gov.au/parental-leave-pay", "page_last_updated": "2026-09-10", "stale": false}, {"id": "c_75307ddf", "title": "Who can get Parental Leave Pay", "heading_path": "Who can get it", "url": "https://www.servicesaustralia.gov.au/who-can-get-parental-leave-pay", "page_last_updated": "2026-04-01", "stale": false}, {"id": "c_cbba5be1", "title": "Child Care Subsidy", "heading_path": "Child Care Subsidy", "url": "https://www.servicesaustralia.gov.au/child-care-subsidy", "page_last_updated": "2026-01-05", "stale": false}, {"id": "c_d9b1fcc9", "title": "Parental Leave Pay", "heading_path": "Parental Leave Pay > We have information in different languages about Parental Leave Pay > Having a baby audio", "url": "https://www.servicesaustralia.gov.au/parental-leave-pay", "page_last_updated": "2026-09-10", "stale": false}], "not_answered": ["لا يمكن تحديد أي مبلغ للدفعات أو مدة معالجة الطلب أو وقت الانتظار من هذه المعلومات"], "confidence": 0.5, "meta": {"elapsed_ms": 15960.3, "recorded": true}, "stale_sources": []}}, "上周洪水损坏了我们的房子。": {"lang": "zh-CN", "plan": {"language": "zh", "rtl": false, "refusal": null, "query_facets": [], "query_expansions": ["Disaster Recovery Payment", "Disaster Recovery Allowance", "Crisis Payment"], "pages": [{"title": "How to claim NT Flooding, February to March 2026 - Disaster Recovery Allowance", "url": "https://www.servicesaustralia.gov.au/how-to-claim-nt-flooding-feb-to-mar-2026-dra", "page_last_updated": "2026-07-28"}, {"title": "Crisis Payment", "url": "https://www.servicesaustralia.gov.au/crisis-payment", "page_last_updated": "2026-03-04"}, {"title": "How to claim WA TC Narelle, March 2026 - Disaster Recovery Allowance", "url": "https://www.servicesaustralia.gov.au/how-to-claim-wa-tc-narelle-mar-2026-dra", "page_last_updated": "2026-07-28"}, {"title": "Who can get NT Flooding, February to March 2026 - Disaster Recovery Allowance", "url": "https://www.servicesaustralia.gov.au/who-can-get-nt-flooding-feb-to-mar-2026-dra", "page_last_updated": "2026-06-18"}, {"title": "Victoria Bushfires, January 2026 - Disaster Recovery Allowance", "url": "https://www.servicesaustralia.gov.au/vic-bushfires-jan-2026-dra", "page_last_updated": "2026-07-22"}, {"title": "Who can get a Crisis Payment for Extreme Circumstances Family and Domestic Violence", "url": "https://www.servicesaustralia.gov.au/who-can-get-crisis-payment-for-extreme-circumstances-family-and-domestic-violence", "page_last_updated": "2025-10-29"}], "confidence": 0.5}, "answer": {"language": "zh", "query_facets": [], "query_expansions": ["Disaster Recovery Payment", "Disaster Recovery Allowance", "Crisis Payment"], "refusal": null, "payments": [{"name": "Disaster Recovery Allowance", "one_liner": "Disaster Recovery Allowance（灾难恢复津贴）是为因NT 2026年2月至3月洪水而失去收入的人提供的援助", "distinguisher": "这是专门针对NT Flooding, February to March 2026事件的Disaster Recovery Allowance，和其他灾难（如龙卷风或丛林大火）的DRA是分开的", "eligibility_signals": [{"text": "你必须符合相关资格条件才能领取Disaster Recovery Allowance (DRA)", "source_ids": ["c_09fec7dc"]}], "source_ids": ["c_09fec7dc", "c_12047c88"]}], "next_actions": [{"order": 1, "text": "查看NT Flooding, February to March 2026 - Disaster Recovery Allowance的资格条件，确认你的情况是否符合", "url": "https://www.servicesaustralia.gov.au/who-can-get-nt-flooding-feb-to-mar-2026-dra", "source_ids": ["c_09fec7dc"]}, {"order": 2, "text": "了解如何申请Disaster Recovery Allowance", "url": "https://www.servicesaustralia.gov.au/how-to-claim-nt-flooding-feb-to-mar-2026-dra", "source_ids": ["c_12047c88"]}], "sources": [{"id": "c_09fec7dc", "title": "Who can get NT Flooding, February to March 2026 - Disaster Recovery Allowance", "heading_path": "Who can get it", "url": "https://www.servicesaustralia.gov.au/who-can-get-nt-flooding-feb-to-mar-2026-dra", "page_last_updated": "2026-06-18", "stale": false}, {"id": "c_12047c88", "title": "How to claim NT Flooding, February to March 2026 - Disaster Recovery Allowance", "heading_path": "How to claim", "url": "https://www.servicesaustralia.gov.au/how-to-claim-nt-flooding-feb-to-mar-2026-dra", "page_last_updated": "2026-07-28", "stale": false}], "not_answered": ["无法确认你所在地区或具体是哪一场洪水事件，因此无法确定金额、等待时间或是否符合资格", "如果这场洪水不是NT地区2026年2月至3月的洪水，这些资料可能不适用，需要提供更多具体信息（如地点和时间）才能确认适用的援助"], "confidence": 0.5, "meta": {"elapsed_ms": 13974.5, "recorded": true}, "stale_sources": []}}, "ਪਿਛਲੇ ਹਫ਼ਤੇ ਮੇਰੀ ਨੌਕਰੀ ਚਲੀ ਗਈ, ਮੈਂ ਕੈਜ਼ੂਅਲ ਸੀ ਇਸ ਲਈ ਕੋਈ ਰਿਡੰਡੈਂਸੀ ਨਹੀਂ ਮਿਲੀ।": {"lang": "pa-Guru-IN", "plan": {"language": "pa", "rtl": false, "refusal": null, "query_facets": [], "query_expansions": ["looking for work", "JobSeeker Payment", "income test", "activity test"], "pages": [{"title": "Who can get JobSeeker Payment", "url": "https://www.servicesaustralia.gov.au/who-can-get-jobseeker-payment", "page_last_updated": "2025-12-04"}, {"title": "JobSeeker Payment", "url": "https://www.servicesaustralia.gov.au/jobseeker-payment", "page_last_updated": "2026-04-29"}, {"title": "Family Tax Benefit", "url": "https://www.servicesaustralia.gov.au/family-tax-benefit", "page_last_updated": "2026-06-15"}, {"title": "Who can get Qld Rainfall and Flooding, February to March 2026 - New Zealand Disaster Recovery Payment", "url": "https://www.servicesaustralia.gov.au/who-can-get-qld-rainfall-and-flooding-feb-to-mar-26-nz-drp", "page_last_updated": "2026-07-17"}, {"title": "How to claim Qld Rainfall and Flooding, February to March 2026 - New Zealand Disaster Recovery Payment", "url": "https://www.servicesaustralia.gov.au/how-to-claim-qld-rainfall-and-flooding-feb-to-mar-26-nz-drp", "page_last_updated": "2026-07-23"}], "confidence": 0.5}, "answer": {"language": "pa", "query_facets": [], "query_expansions": ["looking for work", "JobSeeker Payment", "income test", "activity test"], "refusal": null, "payments": [{"name": "JobSeeker Payment", "one_liner": "JobSeeker Payment (ਬੇਰੋਜ਼ਗਾਰ ਜਾਂ ਕੰਮ ਦੀ ਭਾਲ ਕਰ ਰਹੇ ਲੋਕਾਂ ਲਈ ਵਿੱਤੀ ਮਦਦ) - ਉਹਨਾਂ ਲੋਕਾਂ ਲਈ ਜੋ ਬੇਰੋਜ਼ਗਾਰ ਹਨ ਜਾਂ ਪੂਰਾ ਸਮਾਂ ਕੰਮ ਨਹੀਂ ਕਰ ਰਹੇ।", "distinguisher": null, "eligibility_signals": [{"text": "ਜੇ ਤੁਸੀਂ ਬੇਰੋਜ਼ਗਾਰ ਹੋ ਤਾਂ ਤੁਹਾਨੂੰ ਇਹ ਪੇਮੈਂਟ ਮਿਲ ਸਕਦੀ ਹੈ", "source_ids": ["c_413556c0"]}, {"text": "ਇਹ ਪੇਮੈਂਟ 22 ਸਾਲ ਤੋਂ Age Pension ਉਮਰ ਤੱਕ ਦੇ ਲੋਕਾਂ ਲਈ ਹੈ ਜੋ ਕੰਮ ਲੱਭ ਰਹੇ ਹਨ", "source_ids": ["c_acbcd765"]}, {"text": "ਇਸ ਪੇਮੈਂਟ ਲੈਣ ਲਈ ਕੁਝ ਨਿਯਮ ਪੂਰੇ ਕਰਨੇ ਪੈਂਦੇ ਹਨ", "source_ids": ["c_83bd8b52"]}], "source_ids": ["c_413556c0", "c_acbcd765", "c_83bd8b52"]}], "next_actions": [{"order": 1, "text": "JobSeeker Payment ਲਈ ਯੋਗਤਾ ਦੇ ਨਿਯਮ ਪੜ੍ਹੋ ਅਤੇ ਦੇਖੋ ਕਿ ਤੁਸੀਂ ਇਹਨਾਂ ਨੂੰ ਪੂਰਾ ਕਰਦੇ ਹੋ ਜਾਂ ਨਹੀਂ", "url": "https://www.servicesaustralia.gov.au/who-can-get-jobseeker-payment", "source_ids": ["c_413556c0", "c_83bd8b52"]}], "sources": [{"id": "c_413556c0", "title": "Who can get JobSeeker Payment", "heading_path": "Who can get it > Unemployed and looking for work", "url": "https://www.servicesaustralia.gov.au/who-can-get-jobseeker-payment", "page_last_updated": "2025-12-04", "stale": false}, {"id": "c_83bd8b52", "title": "Who can get JobSeeker Payment", "heading_path": "Who can get it", "url": "https://www.servicesaustralia.gov.au/who-can-get-jobseeker-payment", "page_last_updated": "2025-12-04", "stale": false}, {"id": "c_acbcd765", "title": "JobSeeker Payment", "heading_path": "JobSeeker Payment", "url": "https://www.servicesaustralia.gov.au/jobseeker-payment", "page_last_updated": "2026-04-29", "stale": false}], "not_answered": ["ਇਹ ਦੱਸਣ ਲਈ ਜਾਣਕਾਰੀ ਨਹੀਂ ਹੈ ਕਿ ਤੁਹਾਨੂੰ ਕਿੰਨੀ ਰਕਮ ਮਿਲੇਗੀ ਜਾਂ ਪ੍ਰੋਸੈਸਿੰਗ ਵਿੱਚ ਕਿੰਨਾ ਸਮਾਂ ਲੱਗੇਗਾ"], "confidence": 0.5, "meta": {"elapsed_ms": 18690.1, "recorded": true}, "stale_sources": []}}, "How much will I get for Carer Payment?": {"lang": "en-AU", "plan": {"language": "en", "rtl": false, "refusal": {"class": "amount"}, "query_facets": [], "query_expansions": [], "pages": [], "confidence": 0.0}, "answer": {"language": "en", "query_facets": [], "query_expansions": [], "refusal": {"class": "amount", "message": "This tool will not quote payment amounts. Rates change and depend on your circumstances, so a number from here could be wrong in a way that matters.", "phone": "132 850", "offer": {"text": "Use the official payment and service finder", "url": "https://www.servicesaustralia.gov.au/payment-and-service-finder"}}, "payments": [], "next_actions": [], "sources": [], "not_answered": [], "confidence": 0.0, "meta": {"elapsed_ms": 0.0, "recorded": true}}}, "My CRN is 123 456 789A, what can I claim?": {"lang": "en-AU", "plan": {"language": "en", "rtl": false, "refusal": {"class": "pii_detected"}, "query_facets": [], "query_expansions": [], "pages": [], "confidence": 0.0}, "answer": {"language": "en", "query_facets": [], "query_expansions": [], "refusal": {"class": "pii_detected", "message": "That looks like it contains an identifier such as a customer reference number. Nothing was stored and nothing was sent anywhere. Please ask again without it.", "phone": "132 850", "detail": "crn"}, "payments": [], "next_actions": [], "sources": [], "not_answered": [], "confidence": 0.0, "meta": {"elapsed_ms": 0.0, "recorded": true}}}, "__health__": {"status": "ok", "demo_mode": "recorded", "provider": "anthropic", "embedder": "openai:512", "pages": 379, "chunks": 1805, "vectors": 1805}};
+  var norm = function(s){ return String(s || "").trim().replace(/\s+/g, " "); };
+  var keys = {}; Object.keys(REC).forEach(function(k){ keys[norm(k)] = k; });
+  function reply(obj, ms){ return new Promise(function(r){ setTimeout(function(){
+    r(new Response(JSON.stringify(obj), {headers: {"Content-Type": "application/json"}})); }, ms); }); }
+  var DEMO = {language: "en", refusal: {"class": "demo_only", phone: "132 850",
+    message: "This page replays answers the pipeline recorded for the example situations above. The full version answers any situation, in any of 24 languages, when it runs with its corpus and a Claude key: see the code link at the top."},
+    payments: [], next_actions: [], sources: [], not_answered: [], query_facets: []};
+  window.fetch = function(url){
+    var parts = String(url).split("?"), path = parts[0], p = new URLSearchParams(parts[1] || "");
+    if (/api\/health$/.test(path)) return reply(REC.__health__, 30);
+    var k = keys[norm(p.get("q"))], item = k && REC[k];
+    if (/api\/plan$/.test(path)) return reply(item ? item.plan : {language: "en", rtl: false, refusal: {"class": "demo_only"}, pages: [], query_facets: [], query_expansions: []}, item ? 1900 : 300);
+    if (/api\/answer$/.test(path)) {
+      if (!item) return reply(DEMO, 700);
+      var ms = item.answer.refusal ? 900 : Math.max(4200, Math.min(7500, (item.answer.meta.elapsed_ms || 9000) * 0.35));
+      return reply(item.answer, ms);
+    }
+    return Promise.reject(new Error("offline demo"));
+  };
+})();
+</script>
+<script>
+(function(){
+  "use strict";
+  // Speech code, native name. The first entry types freely and lets the model detect.
+  var LANGS = [
+    ["auto","Any language · detect"],["en-AU","English"],["zh-CN","中文 · 普通话"],["yue-Hant-HK","粵語 · Cantonese"],
+    ["ar-SA","العربية · Arabic"],["vi-VN","Tiếng Việt"],["pa-Guru-IN","ਪੰਜਾਬੀ · Punjabi"],["el-GR","Ελληνικά · Greek"],
+    ["it-IT","Italiano"],["hi-IN","हिन्दी · Hindi"],["ne-NP","नेपाली · Nepali"],["fil-PH","Filipino"],
+    ["es-ES","Español"],["ko-KR","한국어 · Korean"],["ta-IN","தமிழ் · Tamil"],["ur-PK","اردو · Urdu"],
+    ["fa-IR","فارسی · Persian"],["id-ID","Bahasa Indonesia"],["th-TH","ไทย · Thai"],["ja-JP","日本語 · Japanese"],
+    ["tr-TR","Türkçe"],["bn-BD","বাংলা · Bengali"],["si-LK","සිංහල · Sinhala"],["ru-RU","Русский"],["mk-MK","Македонски"]
+  ];
+  var RTL = {ar:1,fa:1,ur:1,he:1};
+
+  var $ = function(id){ return document.getElementById(id); };
+  var q = $("q"), out = $("out"), langSel = $("lang"), mic = $("mic"), hint = $("hint"), go = $("go"), form = $("ask");
+  var esc = function(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); };
+  var fmtDate = function(d){ if(!d) return "date unknown"; try { return new Date(d + "T00:00:00").toLocaleDateString(undefined,{day:"numeric",month:"short",year:"numeric"}); } catch(e){ return d; } };
+
+  // ---------- language picker ----------
+  LANGS.forEach(function(l){ var o = document.createElement("option"); o.value = l[0]; o.textContent = l[1]; langSel.appendChild(o); });
+  var saved = null;
+  try { saved = localStorage.getItem("pf-lang"); } catch(e) {}
+  langSel.value = saved && LANGS.some(function(l){ return l[0] === saved; }) ? saved : "auto";
+  langSel.addEventListener("change", function(){ try { localStorage.setItem("pf-lang", langSel.value); } catch(e) {} applyDir(); });
+  function speechLang(){
+    if (langSel.value !== "auto") return langSel.value;
+    var nav = (navigator.language || "en-AU");
+    var hit = LANGS.find(function(l){ return l[0].split("-")[0] === nav.split("-")[0]; });
+    return hit && hit[0] !== "auto" ? hit[0] : "en-AU";
+  }
+  function applyDir(){
+    var p = (langSel.value === "auto" ? "" : langSel.value.split("-")[0]);
+    q.setAttribute("dir", RTL[p] ? "rtl" : "auto");
+  }
+  applyDir();
+
+  // ---------- voice ----------
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  var rec = null, listening = false, typedBefore = "", finalText = "";
+  if (!SR) {
+    mic.hidden = true;
+    hint.textContent = "Voice needs Chrome, Edge or Safari. Typing works everywhere.";
+  }
+  function stopListening(){ if (rec) try { rec.stop(); } catch(e) {} }
+  mic.addEventListener("click", function(){
+    if (!SR) return;
+    if (listening) { stopListening(); return; }
+    rec = new SR();
+    rec.lang = speechLang();
+    rec.interimResults = true;
+    rec.continuous = false;
+    rec.maxAlternatives = 1;
+    typedBefore = q.value.trim() ? q.value.trim() + " " : "";
+    finalText = "";
+    rec.onstart = function(){
+      listening = true; mic.classList.add("live"); mic.setAttribute("aria-pressed","true");
+      form.classList.add("listening");
+      var name = (LANGS.find(function(l){ return l[0] === rec.lang; }) || [0, rec.lang])[1];
+      hint.textContent = "Listening in " + name + "… speak naturally.";
+    };
+    rec.onresult = function(ev){
+      var interim = "";
+      for (var i = ev.resultIndex; i < ev.results.length; i++) {
+        var t = ev.results[i][0].transcript;
+        if (ev.results[i].isFinal) finalText += t; else interim += t;
+      }
+      q.value = (typedBefore + finalText + interim).slice(0, 500);
+    };
+    rec.onerror = function(ev){
+      var m = {"not-allowed":"Microphone permission was blocked. Allow it in the address bar, or type instead.",
+               "no-speech":"Didn't catch anything. Tap the microphone and try again.",
+               "language-not-supported":"Your browser can't transcribe this language yet. Type instead; answers still come back in it.",
+               "network":"The browser's speech service is unreachable. Typing still works."}[ev.error];
+      hint.textContent = m || "Voice input stopped. Typing still works.";
+    };
+    rec.onend = function(){
+      listening = false; mic.classList.remove("live"); mic.setAttribute("aria-pressed","false");
+      form.classList.remove("listening");
+      if (finalText.trim()) { hint.textContent = "Got it. Finding what applies…"; ask(); }
+      else if (/Listening/.test(hint.textContent)) hint.textContent = "Type, or tap the microphone and speak.";
+    };
+    try { rec.start(); } catch(e) { hint.textContent = "Voice input could not start. Typing still works."; }
+  });
+
+  // ---------- examples ----------
+  document.querySelectorAll(".ex").forEach(function(b){
+    b.addEventListener("click", function(){
+      q.value = b.lastChild.textContent.trim();
+      langSel.value = b.dataset.lang || "auto"; applyDir();
+      window.scrollTo({top: form.getBoundingClientRect().top + window.scrollY - 24, behavior: "smooth"});
+      ask();
+    });
+  });
+  form.addEventListener("submit", function(e){ e.preventDefault(); ask(); });
+  q.addEventListener("keydown", function(e){ if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); ask(); } });
+
+  // ---------- asking ----------
+  var run = 0, timer = null;
+  function params(){
+    var p = "q=" + encodeURIComponent(q.value.trim());
+    if (langSel.value !== "auto") p += "&lang=" + encodeURIComponent(langSel.value);
+    return p;
+  }
+  function stepsShell(){
+    return '<div class="steps" id="steps">' +
+      step("s1","Reading your situation","") +
+      step("s2","Searching the official pages","") +
+      step("s3","Writing the answer and checking every line against its source","") +
+      "</div>";
+  }
+  function step(id, title){ return '<div class="step run" id="' + id + '"><span class="dot" aria-hidden="true"></span><h3>' + title + '</h3><span class="t"></span><div class="body"></div></div>'; }
+  function setStep(id, state, body, t){
+    var el = $(id); if (!el) return;
+    el.className = "step " + state;
+    if (body != null) el.querySelector(".body").innerHTML = body;
+    if (t != null) el.querySelector(".t").textContent = t;
+  }
+
+  function ask(){
+    var question = q.value.trim();
+    if (!question) { q.focus(); return; }
+    stopListening();
+    var mine = ++run, started = performance.now();
+    go.disabled = true;
+    out.innerHTML = stepsShell();
+    clearInterval(timer);
+    timer = setInterval(function(){
+      if (mine !== run) return clearInterval(timer);
+      var s = ((performance.now() - started) / 1000).toFixed(0) + "s";
+      var s3 = $("s3"); if (s3 && s3.classList.contains("run")) s3.querySelector(".t").textContent = s;
+    }, 250);
+
+    fetch("/api/plan?" + params()).then(function(r){ return r.json(); }).then(function(p){
+      if (mine !== run || !$("steps")) return;
+      if (p.refusal) { setStep("s1","ok",'<span class="chip">Stopped before searching</span>'); setStep("s2","ok",""); return; }
+      var facets = (p.query_facets || []).map(function(f){ return '<span class="chip">' + esc(f) + '</span>'; }).join("");
+      var exps = (p.query_expansions || []).map(function(f){ return '<span class="chip en" title="Searched in the pages\' own English">' + esc(f) + '</span>'; }).join("");
+      setStep("s1","ok", facets + exps, ((performance.now() - started)/1000).toFixed(1) + "s");
+      var pages = (p.pages || []).map(function(pg, i){
+        return '<span class="found" style="animation-delay:' + (i*70) + 'ms"><b>' + esc(pg.title) + '</b><time datetime="' + esc(pg.page_last_updated) + '">' + esc(fmtDate(pg.page_last_updated)) + '</time></span>';
+      }).join("");
+      setStep("s2","ok", pages || '<span class="chip">No strong match yet</span>', ((performance.now() - started)/1000).toFixed(1) + "s");
+    }).catch(function(){});
+
+    fetch("/api/answer?" + params()).then(function(r){ return r.json(); }).then(function(d){
+      if (mine !== run) return;
+      clearInterval(timer);
+      d._secs = ((performance.now() - started)/1000).toFixed(1);
+      render(d);
+    }).catch(function(){
+      if (mine !== run) return;
+      clearInterval(timer);
+      out.innerHTML = refusalCard({message:"The service did not respond. Nothing was sent anywhere else.", phone:"132 850"}, "Connection");
+    }).finally(function(){ if (mine === run) go.disabled = false; });
+  }
+
+  // ---------- rendering ----------
+  var KICK = {pii_detected:"Personal details", claim_status:"Your claim", amount:"Payment amounts", personal_record:"Your record",
+    wait_time:"Wait times", action_on_record:"Action on your record", out_of_corpus:"Outside these pages", out_of_scope:"Out of scope",
+    determination:"A decision about you", low_confidence:"Not clear enough to answer", demo_only:"Recorded demo"};
+  var TITLE = {pii_detected:"Please don't share identifiers here", amount:"Amounts depend on your circumstances",
+    low_confidence:"The pages don't clearly answer this, so it won't guess",
+    demo_only:"This shared link replays recorded answers"};
+  function refusalCard(r, kick){
+    var o = r.offer;
+    return '<div class="refusal"><span class="kicker">' + esc(kick || KICK[r["class"]] || "Out of scope") + '</span>' +
+      '<h2>' + esc(TITLE[r["class"]] || "This one is for Services Australia directly") + '</h2>' +
+      '<p>' + esc(r.message) + '</p><div class="acts">' +
+      (o && o.url ? '<a class="btn primary" href="' + esc(o.url) + '" target="_blank" rel="noopener">' + esc(o.text) + ' ↗</a>' : (o ? '<span class="btn">' + esc(o.text) + '</span>' : "")) +
+      (r.phone ? '<a class="btn" href="tel:' + esc(String(r.phone).replace(/\s/g,"")) + '">Call ' + esc(r.phone) + '</a>' : "") +
+      '</div></div>';
+  }
+
+  var srcIndex = {};
+  function cites(ids){
+    return (ids || []).map(function(id){
+      var s = srcIndex[id]; if (!s) return "";
+      return '<a class="cite" href="' + esc(s.url) + '" target="_blank" rel="noopener" title="' + esc(s.title + " · updated " + fmtDate(s.page_last_updated)) + '">' + s.n + '</a>';
+    }).join("");
+  }
+
+  var lastSpeech = "", lastLang = "en";
+  function render(d){
+    var lang = d.language || "en";
+    document.documentElement.lang = lang;
+    if (d.refusal) { out.innerHTML = refusalCard(d.refusal); out.setAttribute("dir","ltr"); return; }
+    out.setAttribute("dir", RTL[lang] ? "rtl" : "ltr");
+    srcIndex = {};
+    (d.sources || []).forEach(function(s, i){ s.n = i + 1; srcIndex[s.id] = s; });
+    var pays = d.payments || [];
+
+    var payHtml = pays.map(function(p, i){
+      return '<article class="pay" style="animation:rise .45s var(--ease) ' + (i*90) + 'ms both">' +
+        '<span class="kicker">Payment ' + (i+1) + ' of ' + pays.length + '</span>' +
+        '<h3 dir="ltr">' + esc(p.name) + '</h3>' +
+        '<p class="who">' + esc(p.one_liner) + cites(p.source_ids) + '</p>' +
+        (p.distinguisher ? '<p class="diff"><b>Not the same as</b>' + esc(p.distinguisher) + '</p>' : '') +
+        ((p.eligibility_signals || []).length ? '<p class="rules-h">What the rules say</p><ul class="rules">' +
+          p.eligibility_signals.map(function(s){ return '<li>' + esc(s.text) + cites(s.source_ids) + '</li>'; }).join("") + '</ul>' : '') +
+        '</article>';
+    }).join("");
+
+    var next = (d.next_actions || []).length ? '<section class="panel"><h3>What to do next <span class="n">' + d.next_actions.length + ' steps</span></h3><ol class="next">' +
+      d.next_actions.map(function(a){
+        return '<li><div>' + esc(a.text) + cites(a.source_ids) +
+          (a.url ? '<br><a class="go-link" href="' + esc(a.url) + '" target="_blank" rel="noopener">Open the official page</a>' : '') + '</div></li>';
+      }).join("") + '</ol></section>' : '';
+
+    var cant = (d.not_answered || []).length ? '<section class="panel cant"><h3>What this can\'t tell you</h3><ul>' +
+      d.not_answered.map(function(x){ return '<li>' + esc(x) + '</li>'; }).join("") + '</ul></section>' : '';
+
+    var srcs = (d.sources || []).length ? '<section class="panel"><h3>Official sources <span class="n">' + d.sources.length + ' pages</span></h3><ol class="srcs">' +
+      d.sources.map(function(s){
+        return '<li><span class="i">' + s.n + '</span><a href="' + esc(s.url) + '" target="_blank" rel="noopener" dir="ltr">' + esc(s.title) + '</a>' +
+          '<time class="' + (s.stale ? "stale" : "") + '" datetime="' + esc(s.page_last_updated) + '">' + (s.stale ? "check · " : "updated ") + esc(fmtDate(s.page_last_updated)) + '</time></li>';
+      }).join("") + '</ol></section>' : '';
+
+    var how = '<details class="how"><summary>How this was found · ' + esc(d._secs) + 's</summary><div class="body">' +
+      (d.query_facets || []).map(function(f){ return '<span class="chip">' + esc(f) + '</span>'; }).join("") +
+      (d.query_expansions || []).map(function(f){ return '<span class="chip en">' + esc(f) + '</span>'; }).join("") +
+      '</div></details>';
+
+    var head = '<div class="sum"><h2>' + (pays.length ? (pays.length === 1 ? "One payment fits what you described" : pays.length + " payments fit what you described") : "Nothing in the pages fits this clearly") + '</h2>' +
+      (window.speechSynthesis ? '<button type="button" class="tool" id="speak"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4zM16 8.5a5 5 0 0 1 0 7M19 5.5a9 9 0 0 1 0 13"/></svg><span>Read aloud</span></button>' : '') +
+      '</div>';
+
+    out.innerHTML = '<div class="answer">' + head + payHtml + next + cant + srcs + how + '</div>';
+
+    lastLang = lang;
+    lastSpeech = pays.map(function(p){ return p.name + ". " + p.one_liner; }).join(" ") +
+      ((d.next_actions || []).length ? " " + d.next_actions.map(function(a){ return a.text; }).join(" ") : "");
+    var sp = $("speak"); if (sp) sp.addEventListener("click", speak);
+  }
+
+  function speak(){
+    var sp = $("speak"), synth = window.speechSynthesis;
+    if (!synth || !sp) return;
+    if (synth.speaking) { synth.cancel(); sp.classList.remove("on"); sp.lastChild.textContent = "Read aloud"; return; }
+    var u = new SpeechSynthesisUtterance(lastSpeech);
+    var want = langSel.value !== "auto" ? langSel.value : lastLang;
+    u.lang = want;
+    var voices = synth.getVoices(), p = want.split("-")[0];
+    var v = voices.find(function(x){ return x.lang.toLowerCase() === want.toLowerCase(); }) ||
+            voices.find(function(x){ return x.lang.toLowerCase().split(/[-_]/)[0] === (p === "yue" ? "zh" : p); });
+    if (v) u.voice = v;
+    else if (voices.length && p !== "en") { hint.textContent = "This device has no voice for that language, so the reading may sound off."; }
+    u.onend = u.onerror = function(){ sp.classList.remove("on"); sp.lastChild.textContent = "Read aloud"; };
+    sp.classList.add("on"); sp.lastChild.textContent = "Stop reading";
+    synth.speak(u);
+  }
+  if (window.speechSynthesis) window.speechSynthesis.getVoices();
+
+  // ---------- corpus line ----------
+  fetch("/api/health").then(function(r){ return r.json(); }).then(function(h){
+    if (h.pages) $("corpus").textContent = h.pages + " official pages";
+    $("build").textContent = h.pages + " pages · " + h.chunks + " passages · answers by " + h.provider + " · embeddings " + h.embedder;
+  }).catch(function(){});
+})();
+</script>
+</body>
+</html>
