@@ -4,6 +4,7 @@ Say what's happening in your life, in your own language, and see which Australia
 government payments apply, with the official page and its date behind every line.
 
 - **Demo:** https://vishal8shah.github.io/payment-finder/
+- **The 2-minute film:** https://vishal8shah.github.io/payment-finder/film/
 - **Deck:** https://vishal8shah.github.io/payment-finder/deck.html
 - **Code, evals and decision log:** https://github.com/vishal8shah/Services-Australia-demo
 
@@ -15,3 +16,6 @@ Unofficial prototype. Not affiliated with or endorsed by Services Australia. Ans
 are drawn from public pages published by Services Australia, © Commonwealth of
 Australia, reused under CC BY 4.0. Fonts via Google Fonts under the SIL Open Font
 License. Built with Claude.
+
+Film credits: music "Carefree" by Kevin MacLeod (incompetech.com), CC BY 4.0; AI voices
+by ElevenLabs; stock footage via Pexels. Full credits on the film page.

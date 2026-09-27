@@ -5,6 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Payment Finder</title>
 <meta name="description" content="Say what is happening in your own language and see which Australian government payments apply, with the official page behind every line. Unofficial prototype built with Claude.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Payment Finder">
+<meta property="og:description" content="Say what is happening in your own language and see which Australian government payments apply, with the official page behind every line. Unofficial prototype built with Claude.">
+<meta property="og:url" content="https://vishal8shah.github.io/payment-finder/">
+<meta property="og:image" content="https://vishal8shah.github.io/payment-finder/film/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://vishal8shah.github.io/payment-finder/film/og.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Schibsted+Grotesk:wght@500;600;700;800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap">
@@ -224,7 +233,7 @@ footer .meta{font:12px var(--mono)}
 <div class="notice" role="note">
   <div class="wrap">
     <b>Unofficial prototype · recorded demo</b>
-    <span>Not affiliated with Services Australia. It cannot see your record, claim, balance, wait times or payment amounts, and it stores nothing you type or say. The example answers were generated live by the pipeline on 18 September 2026 and are replayed here, faster than live. <a href="deck.html" style="color:#9fe0c4">Deck</a> · <a href="https://github.com/vishal8shah/Services-Australia-demo" style="color:#9fe0c4">Code</a></span>
+    <span>Not affiliated with Services Australia. It cannot see your record, claim, balance, wait times or payment amounts, and it stores nothing you type or say. The example answers were generated live by the pipeline on 18 September 2026 and are replayed here, faster than live. <a href="film/" style="color:#9fe0c4">Watch the 2-minute film</a> · <a href="deck.html" style="color:#9fe0c4">Deck</a> · <a href="https://github.com/vishal8shah/Services-Australia-demo" style="color:#9fe0c4">Code</a></span>
   </div>
 </div>
 
@@ -540,7 +549,7 @@ footer .meta{font:12px var(--mono)}
       (d.query_expansions || []).map(function(f){ return '<span class="chip en">' + esc(f) + '</span>'; }).join("") +
       '</div></details>';
 
-    var head = '<div class="sum"><h2>' + (pays.length ? (pays.length === 1 ? "One payment fits what you described" : pays.length + " payments fit what you described") : "Nothing in the pages fits this clearly") + '</h2>' +
+    var head = '<div class="sum"><h2><bdi>' + (pays.length ? (pays.length === 1 ? "One payment fits what you described" : pays.length + " payments fit what you described") : "Nothing in the pages fits this clearly") + '</bdi></h2>' +
       (window.speechSynthesis ? '<button type="button" class="tool" id="speak"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4zM16 8.5a5 5 0 0 1 0 7M19 5.5a9 9 0 0 1 0 13"/></svg><span>Read aloud</span></button>' : '') +
       '</div>';
 
