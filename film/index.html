@@ -52,6 +52,10 @@ details summary{cursor:pointer;font:600 16px/1.4 var(--display)}
 .credits{font:14px/1.7 var(--mono);color:var(--muted);columns:2 340px;column-gap:40px}
 .credits p{margin:0 0 12px;break-inside:avoid}
 .credits b{color:var(--text);font-weight:500}
+.vertical{display:grid;grid-template-columns:minmax(0,360px) 1fr;gap:32px;align-items:center}
+.vertical .phone{border-radius:22px;overflow:hidden;border:1px solid var(--rule);box-shadow:0 24px 70px rgba(0,0,0,.5);background:#000;aspect-ratio:9/16}
+.vertical p{color:var(--muted);margin:0 0 14px}
+@media (max-width:700px){.vertical{grid-template-columns:1fr}.vertical .phone{max-width:360px;margin:0 auto}}
 footer{padding:10px 0 48px;font:13px/1.6 var(--mono);color:var(--muted)}
 </style>
 </head>
@@ -76,6 +80,22 @@ footer{padding:10px 0 48px;font:13px/1.6 var(--mono);color:var(--muted)}
   <a href="../deck.html">Read the deck</a>
   <a href="https://github.com/vishal8shah/Services-Australia-demo">Code, evals and decisions</a>
 </div>
+
+<section>
+  <h2>Vertical cut, for phones</h2>
+  <div class="vertical">
+    <div class="phone">
+      <video controls playsinline preload="none" poster="poster-vertical.jpg" aria-label="Payment Finder film, vertical 9:16 cut, 2 minutes, with burned-in captions">
+        <source src="payment-finder-film-vertical.mp4" type="video/mp4">
+        <a href="payment-finder-film-vertical.mp4">Download the vertical film (MP4)</a>
+      </video>
+    </div>
+    <div>
+      <p>The same two minutes, reframed for a phone held upright: side-by-side scenes stack top and bottom, and captions are sized for a small screen. Same soundtrack, same credits.</p>
+      <p class="meta">1080×1920 · 2:00 · <a href="payment-finder-film-vertical.mp4" download>Download MP4</a></p>
+    </div>
+  </div>
+</section>
 
 <section>
   <details>
